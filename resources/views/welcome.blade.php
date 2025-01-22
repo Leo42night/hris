@@ -2,6 +2,10 @@
 
 @section('title', 'User Management')
 
+@section('header')
+    <h2 class="text-3xl font-bold text-center">Manajemen User</h2>
+@endsection
+
 @section('content')
     <table id="dg" title="My Users" class="easyui-datagrid" style="width:700px;height:250px" url="{{ route('getusers') }}"
         toolbar="#toolbar" pagination="true" rownumbers="true" fitColumns="true" singleSelect="true">
@@ -61,7 +65,7 @@
             <div style="margin-bottom:10px">
                 <input type="hidden" name="password" style="width:100%">
                 <input name="newPassword" class="easyui-textbox" type="text" style="width:100%" validType="length[6,12]"
-                    prompt="default same" label="New Password:">
+                    prompt="default is same" label="New Password:">
             </div>
         </form>
     </div>
@@ -92,7 +96,12 @@
                 $('#edit-fm').form('load', row);
                 url = 'users/' + row.id;
             } else {
-                alert('Please select a row.');
+                $.messager.show({
+                    title : 'Warning', 
+                    msg: "Please Select A Row!",
+                    timeout: 500,
+                    showType:'show'    
+                });
             }
         }
 
@@ -110,16 +119,23 @@
                 },
                 success: function(result) {
                     $.messager.progress('close');
-                    console.log(result);
-                    var result = eval('(' + result + ')');
-                    if (result.errorMsg) {
+                    let status = JSON.parse(result);
+
+                    if (status.errorMsgs) {
+                        if (status.errorMsgs.email && status.errorMsgs.email.length > 0) {
+                            $.messager.alert('Error', status.errorMsgs.email[0], 'error');
+                        }
+                    } else if (status.errorMsg) {
+                        $.messager.alert('Error', status.errorMsg, 'error');
+                    } else if (status.success) {                        
                         $.messager.show({
-                            title: 'Error',
-                            msg: result.errorMsg
+                            title: 'Success!',
+                            msg: `User Berhasil Ditambahkan!\nName => ${status.msg}`,
+                            timeout: 700
                         });
-                    } else {
-                        $('#add-dlg').dialog('close'); // close the dialog
-                        $('#dg').datagrid('reload'); // reload the user data
+                        
+                        $('#add-dlg').dialog('close'); // Tutup dialog
+                        $('#dg').datagrid('reload'); // Reload data grid
                     }
                 }
             });
@@ -140,15 +156,23 @@
                 },
                 success: function(result) {
                     $.messager.progress('close');
-                    var result = JSON.parse(result); // Parse the result
-                    if (result.errorMsg) {
+                    let status = JSON.parse(result);
+
+                    if (status.errorMsgs) {
+                        if (status.errorMsgs.email && status.errorMsgs.email.length > 0) {
+                            $.messager.alert('Error', status.errorMsgs.email[0], 'error');
+                        }
+                    } else if (status.errorMsg) {
+                        $.messager.alert('Error', status.errorMsg, 'error');
+                    } else if (status.success) {
                         $.messager.show({
-                            title: 'Error',
-                            msg: result.errorMsg
+                            title: 'Success!',
+                            msg: `User Berhasil Diupdate!\nResult => ${status.msg}`,
+                            timeout: 700
                         });
-                    } else {
-                        $('#edit-dlg').dialog('close'); // close the dialog
-                        $('#dg').datagrid('reload'); // reload the user data
+                        
+                        $('#edit-dlg').dialog('close'); // Tutup dialog
+                        $('#dg').datagrid('reload'); // Reload data grid
                     }
                 }
             });
@@ -161,17 +185,31 @@
                     if (r) {
                         $.post('users/' + row.id, {
                             _method: 'DELETE'
-                        }, function(result) {
-                            if (result.success) {
-                                $('#dg').datagrid('reload'); // reload the user data
-                            } else {
+                        }, function(result) { // callback
+                            let status = JSON.parse(result);
+
+                            if (status.errorMsg) {
                                 $.messager.show({ // show error message
                                     title: 'Error',
-                                    msg: result.errorMsg
+                                    msg: status.errorMsg
+                                });
+                            } else {
+                                $('#dg').datagrid('reload'); // reload the user data
+                                $.messager.show({
+                                    title: 'Success!',
+                                    msg: `User id: ${row.id} Berhasil Dihapus`,
+                                    timeout: 700
                                 });
                             }
-                        }, 'json');
+                        }, 'json'); // request file
                     }
+                });
+            } else {
+                $.messager.show({
+                    title : 'Warning', 
+                    msg: "Please Select A Row!",
+                    timeout: 500,
+                    showType:'show'    
                 });
             }
         }

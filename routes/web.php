@@ -5,12 +5,14 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 
+Route::resource('users', UserController::class)
+    ->names([
+        'index' => 'users'
+    ])
+    ->except(['create', 'show', 'edit']);
 Route::redirect('/', '/users');
-Route::get('/users', [UserController::class, 'index']);
 
-Route::get('/empty', function () {
+Route::get('empty', function () {
     return view('empty');
 })->name('empty');
 
-
-Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -13,8 +14,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
-        return view("welcome", compact("users"));
+        return view("welcome");
     }
 
     /**
@@ -22,21 +22,29 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        
         try {
+            $request->validate([
+                'email' => 'email|unique:users,email'
+            ]);
+         
             $user = User::create([
                 "name" => $request->name,
                 "email" => $request->email,
                 "password" => Hash::make($request->password)
             ]);
-
-            // Jika berhasil
-            if (!$user instanceof User) {
-                // Jika gagal
-                return response()->json(['success' => false, 'errorMsg' => 'Failed to create user'], 500);
-            }
+            
+            return response()->json([
+                'success' => true,
+                'msg' => $user->name
+            ], 201); // Created
+    
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errorMsgs' => $e->errors(), // Mengembalikan array error per kolom
+            ], 422); // 422 Unprocessable Entity
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'errorMsg' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'errorMsg' => $e->getMessage()], 500); // 500 Internal Server Error
         }
     }
 
@@ -45,6 +53,11 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        try {
+            $request->validate([
+                'email' => 'email|unique:users,email,'.$id //pengecualian
+            ]);
+
         $password = $request->input('password');
 
         // cek apakah ada password baru
@@ -52,25 +65,25 @@ class UserController extends Controller
             $password = Hash::make($request->input('newPassword'));
         }
 
-        // return response()->json(['success update' => true, 'id' => $id, 'user' => $request->all()]);
-
         $newUser = [
             'name' => $request->input('name'),
             'email' => $request->input('email'),
             'password' => $password
         ];
 
-        try {
             $user = User::findOrFail($id);
-            $status = $user->update($newUser);
+            $result = $user->update($newUser);
 
-            // Jika berhasil
-            if ($status) {
-                return response()->json(['success' => true, 'message' => 'User updated successfully']);
-            } else {
-                // Jika gagal
-                return response()->json(['success' => false, 'errorMsg' => 'Failed to update user'], 500);
-            }
+            return response()->json([
+                'success' => true,
+                'msg' => $result
+            ], 202); // Accepted (asynchronous)
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errorMsgs' => $e->errors(), // Mengembalikan array error per kolom
+            ], 422); // 422 Unprocessable Entity
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'errorMsg' => $e->getMessage()], 500);
         }
@@ -83,13 +96,8 @@ class UserController extends Controller
     {
 
         try {
-            $status = User::destroy($id);
-            if ($status) {
-                return response()->json(['success' => true, 'message' => 'User deleted successfully']);
-            } else {
-                // Jika gagal
-                return response()->json(['success' => false, 'errorMsg' => 'Failed to delete user'], 500);
-            }
+            User::destroy($id);
+            return response()->json($id);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'errorMsg' => $e->getMessage()], 500);
         }

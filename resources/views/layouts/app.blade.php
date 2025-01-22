@@ -24,14 +24,16 @@
     @endif
 </head>
 
-<body class="font-sans antialiased dark:bg-black dark:text-white/50 w-full h-screen flex flex-col">
+<body class="easyui-layout">
 
-    <header>
-        @yield('header')
-    </header>
+    <div data-options="region:'north',split:true" style="height:100px;">
+        <header class="">
+            @yield('header')
+        </header>
+    </div>
 
     {{-- sidebar  --}}
-    <div class="easyui-panel" style="padding:5px;">
+    <div data-options="region:'west',title:'Menu',split:true" class="easyui-panel" style="padding:5px;width:350px;">
         <div class="grid grid-cols-3 border-b-2 border-gray-200 pb-2 mb-2 border-dashed">
             <a href="{{ route('users') }}" class="easyui-linkbutton"
                 data-options="plain:true{{ 1 == 2 ? ',selected:true' : '' }}">
@@ -75,9 +77,11 @@
         </div>
     </div>
 
-    <main>
-        @yield('content')
-    </main>
+    <div data-options="region:'center',title:'Menu User'" style="padding:5px;background:#eee;">
+        <main>
+            @yield('content')
+        </main>
+    </div>
 
     <script type="text/javascript">
         $.ajaxSetup({
